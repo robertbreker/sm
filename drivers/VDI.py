@@ -95,6 +95,7 @@ class VDI(object):
 
         self.label = ''
         self.description = ''
+        self.force_phy = False
         self.vbds = []
         self.size = 0
         self.utilisation = 0

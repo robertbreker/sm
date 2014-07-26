@@ -1703,3 +1703,14 @@ def read_caching_is_restricted(session):
             restrictions['restrict_read_caching'] == "true":
         return True
     return False
+
+def get_masterips(session):
+   masterips = []
+   pools = session.xenapi.pool.get_all_records()
+   for pool in pools:
+      master = pools[pool]['master']
+   pifs = session.xenapi.PIF.get_all_records()
+   for pif in pifs:
+       if pifs[pif]['IP'] and pifs[pif]['host'] == master:
+           masterips.append(pifs[pif]['IP'])
+   return masterips

@@ -1051,8 +1051,11 @@ class VDI(object):
                       'vhd'  : 'tap' }
 
     def tap_wanted(self):
+        # 1. Let the target force phy
+        if self.target.vdi.force_phy:
+            return False
 
-        # 1. Let the target vdi_type decide
+        # 2. Let the target vdi_type decide
 
         vdi_type = self.target.get_vdi_type()
 

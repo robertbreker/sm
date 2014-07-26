@@ -91,6 +91,10 @@ cp -f /etc/lvm/lvm.conf.orig /etc/lvm/lvm.conf || exit $?
 /opt/xensource/libexec/dcopy
 /opt/xensource/libexec/local-device-change
 /opt/xensource/libexec/make-dummy-sr
+/opt/xensource/sm/BTRFSSR
+/opt/xensource/sm/BTRFSSR.py
+/opt/xensource/sm/BTRFSSR.pyc
+/opt/xensource/sm/BTRFSSR.pyo
 /opt/xensource/sm/DummySR
 /opt/xensource/sm/DummySR.py
 /opt/xensource/sm/DummySR.pyc

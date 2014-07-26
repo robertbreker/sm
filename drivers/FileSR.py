@@ -398,7 +398,8 @@ class FileVDI(VDI.VDI):
         self.sr.srcmd.params['o_direct'] = self.sr.o_direct
 
         if self.sr.srcmd.cmd == "vdi_create":
-            self.vdi_type = vhdutil.VDI_TYPE_VHD
+            if not self.vdi_type:
+                self.vdi_type = vhdutil.VDI_TYPE_VHD
             if self.sr.srcmd.params.has_key("vdi_sm_config") and \
                     self.sr.srcmd.params["vdi_sm_config"].has_key("type"):
                 vdi_type = self.sr.srcmd.params["vdi_sm_config"]["type"]
