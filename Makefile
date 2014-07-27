@@ -152,6 +152,7 @@ install: precheck
 	cd $(SM_STAGING)$(SM_DEST) && for i in $(SM_DRIVERS); do \
 	  ln -sf $$i"SR.py" $$i"SR"; \
 	done
+	cd $(SM_STAGING)$(SM_DEST) && rm -f EXTSR && ln -s BTRFSSR.py EXTSR
 	rm $(SM_STAGING)$(SM_DEST)/SHMSR
 	cd $(SM_STAGING)$(SM_DEST) && rm -f LVHDSR && ln -sf LVHDSR.py LVMSR
 	cd $(SM_STAGING)$(SM_DEST) && rm -f LVHDoISCSISR && ln -sf LVHDoISCSISR.py LVMoISCSISR
