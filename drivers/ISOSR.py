@@ -265,8 +265,8 @@ class ISOSR(SR.SR):
             # to the process waiting.
             if self.dconf.has_key('type') and self.dconf['type']!='cifs':
                 serv_path = location.split(':')
-                nfs.soft_mount(self.mountpoint, serv_path[0], serv_path[1],
-                               'tcp', nfsversion=self.nfsversion)
+                nfs.mount(self.mountpoint, serv_path[0], serv_path[1],
+                          'tcp', nfsversion=self.nfsversion)
             else:
                 util.pread(mountcmd, True)
         except util.CommandException, inst:

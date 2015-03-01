@@ -37,6 +37,8 @@ CAPABILITIES = ["SR_PROBE","SR_UPDATE", "SR_CACHING",
 
 CONFIGURATION = [['server', 'hostname or IP address of NFS server (required)'],
                  ['serverpath', 'path on remote server (required)'],
+                 ['options',
+                  'specify hardmount to force hard mount (optional)'],
                  nfs.NFS_VERSION]
 
 
@@ -92,6 +94,7 @@ class NFSSR(FileSR.FileSR):
         if self.dconf.has_key('useUDP') and self.dconf['useUDP'] == 'true':
             self.transport = "udp"
         self.nfsversion = nfs.validate_nfsversion(self.dconf.get('nfsversion'))
+        self.hardmount = self.is_hardmount_configured()
 
         self._check_o_direct()
 
@@ -122,13 +125,14 @@ class NFSSR(FileSR.FileSR):
     def mount(self, mountpoint, remotepath, timeout = 0):
         try:
             if self.dconf.has_key(PROBEVERSION):
-                nfs.soft_mount(
+                nfs.mount(
                     mountpoint, self.remoteserver, remotepath, self.transport,
-                    timeout=timeout)
+                    timeout=timeout, hardmount=self.hardmount)
             else:
-                nfs.soft_mount(
+                nfs.mount(
                     mountpoint, self.remoteserver, remotepath, self.transport,
-                    timeout=timeout, nfsversion=self.nfsversion)
+                    timeout=timeout, nfsversion=self.nfsversion,
+                    hardmount=self.hardmount)
         except nfs.NfsException, exc:
             raise xs_errors.XenError('NFSMount', opterr=exc.errstr)
 
@@ -250,6 +254,23 @@ class NFSSR(FileSR.FileSR):
         util.SMlog("scanning2 (target=%s)" % target)
         dom = nfs.scan_exports(target)
         print >>sys.stderr,dom.toprettyxml()
+
+    def is_hardmount_configured(self):
+        hardmount = False
+        if (self.dconf.has_key('options')
+            and 'hardmount' in re.split(' |,', self.dconf['options'])):
+            hardmount = True
+        elif isinstance(self.session, XenAPI.Session):
+            try:
+                other_config = self.session.xenapi.SR.get_other_config(
+                    self.sr_ref)
+                if (other_config.has_key('hardmount')
+                    and other_config['hardmount'].lower() == 'true'):
+                    hardmount = True
+            except XenAPI.Failure:
+                util.SMlog("Failed to get NFSSR.other-config - ignore")
+        return hardmount
+
 
 class NFSFileVDI(FileSR.FileVDI):
     def attach(self, sr_uuid, vdi_uuid):
