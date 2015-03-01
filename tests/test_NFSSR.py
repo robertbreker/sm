@@ -2,6 +2,7 @@ import mock
 import nfs
 import NFSSR
 import unittest
+import XenAPI
 
 
 class FakeNFSSR(NFSSR.NFSSR):
@@ -18,7 +19,7 @@ class FakeNFSSR(NFSSR.NFSSR):
 class TestNFSSR(unittest.TestCase):
 
     def create_nfssr(self, server='aServer', serverpath='/aServerpath',
-                     sr_uuid='asr_uuid', nfsversion=None):
+                     sr_uuid='asr_uuid', nfsversion=None, options=None):
         srcmd = mock.Mock()
         srcmd.dconf = {
             'server': server,
@@ -26,6 +27,8 @@ class TestNFSSR(unittest.TestCase):
         }
         if nfsversion:
             srcmd.dconf.update({'nfsversion': nfsversion})
+        if options:
+            srcmd.dconf.update({'options': options})
         srcmd.params = {
             'command': 'some_command',
             'device_config': {}
@@ -62,15 +65,17 @@ class TestNFSSR(unittest.TestCase):
 
         self.assertRaises(nfs.NfsException, self.create_nfssr)
 
+    @mock.patch('NFSSR.NFSSR.is_hardmount_configured')
     @mock.patch('util.makedirs')
     @mock.patch('NFSSR.Lock')
-    @mock.patch('nfs.soft_mount')
+    @mock.patch('nfs.mount')
     @mock.patch('util._testHost')
     @mock.patch('nfs.check_server_tcp')
     @mock.patch('nfs.validate_nfsversion')
     def test_attach(self, validate_nfsversion, check_server_tcp, _testhost,
-                    soft_mount, Lock, makedirs):
+                    mount, Lock, makedirs, is_hardmount_configured):
         validate_nfsversion.return_value = "aNfsversionChanged"
+        is_hardmount_configured.return_value = 'aHardMountOption'
         nfssr = self.create_nfssr(server='aServer', serverpath='/aServerpath',
                                   sr_uuid='UUID')
 
@@ -78,9 +83,46 @@ class TestNFSSR(unittest.TestCase):
 
         check_server_tcp.assert_called_once_with('aServer',
                                                  'aNfsversionChanged')
-        soft_mount.assert_called_once_with('/var/run/sr-mount/UUID',
+        mount.assert_called_once_with('/var/run/sr-mount/UUID',
                                            'aServer',
                                            '/aServerpath/UUID',
                                            'tcp',
                                            timeout=0,
-                                           nfsversion='aNfsversionChanged')
+                                           nfsversion='aNfsversionChanged',
+                                           hardmount='aHardMountOption')
+
+
+    def test_is_hardmount_configured_options_standalone(self):
+        nfssr = self.create_nfssr(options="hardmount")
+
+        hardmount = nfssr.is_hardmount_configured()
+
+        self.assertEqual(hardmount, True)
+
+    def test_is_hardmount_configured_options_one_in_many(self):
+        nfssr = self.create_nfssr(options="I, like, using, hardmount, really")
+
+        hardmount = nfssr.is_hardmount_configured()
+
+        self.assertEqual(hardmount, True)
+
+    def test_is_hardmount_configured_options_other_config(self):
+        nfssr = self.create_nfssr()
+        nfssr.session = mock.Mock(spec=XenAPI.Session)
+        nfssr.session.xenapi = mock.Mock()
+        nfssr.session.xenapi.SR = mock.Mock()
+        nfssr.session.xenapi.SR.get_other_config = mock.Mock()
+        nfssr.session.xenapi.SR.get_other_config.return_value = {'hardmount':
+                                                                 'tRuE'}
+
+        hardmount = nfssr.is_hardmount_configured()
+
+        nfssr.session.xenapi.SR.get_other_config.assert_called_once()
+        self.assertEqual(hardmount, True)
+
+    def test_is_hardmount_configured_default_False(self):
+        nfssr = self.create_nfssr()
+
+        hardmount = nfssr.is_hardmount_configured()
+
+        self.assertEqual(hardmount, False)

@@ -61,13 +61,13 @@ class TestISOSR(unittest.TestCase):
         self.assertRaises(nfs.NfsException, self.create_isosr)
 
     @mock.patch('util.gen_uuid')
-    @mock.patch('nfs.soft_mount')
+    @mock.patch('nfs.mount')
     @mock.patch('util._convertDNS')
     @mock.patch('nfs.validate_nfsversion')
     @mock.patch('util.makedirs')
     @mock.patch('ISOSR.ISOSR._checkmount')
     def test_attach_nfs(self, _checkmount, makedirs, validate_nfsversion,
-                        convertDNS, soft_mount, gen_uuid):
+                        convertDNS, mount, gen_uuid):
         validate_nfsversion.return_value = 'aNfsversionChanged'
         isosr = self.create_isosr(location='aServer:/aLocation', atype='nfs',
                                   sr_uuid='asr_uuid')
@@ -76,8 +76,8 @@ class TestISOSR(unittest.TestCase):
 
         isosr.attach(None)
 
-        soft_mount.assert_called_once_with('/var/run/sr-mount/asr_uuid',
-                                           'aServer',
-                                           '/aLocation',
-                                           'tcp',
-                                           nfsversion='aNfsversionChanged')
+        mount.assert_called_once_with('/var/run/sr-mount/asr_uuid',
+                                      'aServer',
+                                      '/aLocation',
+                                      'tcp',
+                                      nfsversion='aNfsversionChanged')

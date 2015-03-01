@@ -29,8 +29,8 @@ class Test_nfs(unittest.TestCase):
     @mock.patch('util.makedirs')
     @mock.patch('util.pread')
     def test_soft_mount(self, pread, makedirs):
-        nfs.soft_mount('mountpoint', 'remoteserver', 'remotepath', 'transport',
-                       timeout=0)
+        nfs.mount('mountpoint', 'remoteserver', 'remotepath', 'transport',
+                  timeout=0)
 
         pread.assert_called_once_with(self.get_soft_mount_pread('mount.nfs',
                                                                 '3'))
@@ -38,8 +38,8 @@ class Test_nfs(unittest.TestCase):
     @mock.patch('util.makedirs')
     @mock.patch('util.pread')
     def test_soft_mount_nfsversion_3(self, pread, makedirs):
-        nfs.soft_mount('mountpoint', 'remoteserver', 'remotepath', 'transport',
-                       timeout=0, nfsversion='3')
+        nfs.mount('mountpoint', 'remoteserver', 'remotepath', 'transport',
+                  timeout=0, nfsversion='3')
 
         pread.assert_called_once_with(self.get_soft_mount_pread('mount.nfs',
                                                                 '3'))
@@ -47,11 +47,22 @@ class Test_nfs(unittest.TestCase):
     @mock.patch('util.makedirs')
     @mock.patch('util.pread')
     def test_soft_mount_nfsversion_4(self, pread, makedirs):
-        nfs.soft_mount('mountpoint', 'remoteserver', 'remotepath', 'transport',
-                       timeout=0, nfsversion='4')
+        nfs.mount('mountpoint', 'remoteserver', 'remotepath', 'transport',
+                  timeout=0, nfsversion='4')
 
         pread.assert_called_once_with(self.get_soft_mount_pread('mount.nfs4',
                                                                 '4'))
+
+    @mock.patch('util.makedirs')
+    @mock.patch('util.pread')
+    def test_hard_mount(self, pread, makedirs):
+        nfs.mount('mountpoint', 'remoteserver', 'remotepath', 'transport',
+                  timeout=0, hardmount=True)
+
+        pread.assert_called_once_with(['mount.nfs', 'remoteserver:remotepath',
+                                       'mountpoint', '-o', 'hard,'
+                                       'proto=transport,vers=3,acdirmin=0,'
+                                       'acdirmax=0'])
 
     def test_validate_nfsversion_invalid(self):
         for thenfsversion in ['2', '4.1']:
