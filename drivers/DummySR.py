@@ -279,10 +279,92 @@ class DummyVDI(VDI.VDI):
                 time.sleep(2)
                 self.check_no_other_vdi_operation_in_progress()
                 self.check_vbd_list_is_stable(attached_vbds)
-                
+
         util.fistpoint.activate_custom_fn("LVHDRT_xapiSM_serialization_tests", fn)
 
 if __name__ == '__main__':
     SRCommand.run(DummySR, DRIVER_INFO)
 else:
     SR.registerSR(DummySR)
+
+class Volume:
+    def create(self, dbg, sr, name, description, size):
+        u = urlparse.urlparse(sr)
+        return {
+            "key": "unknown-volume",
+            "name": "unknown-volume",
+            "description": "",
+            "read_write": True,
+            "virtual_size": 1,
+            "uri": ["file:\/\/\/secondary\/sr\/unknown-volume"]
+            }
+
+if __name__ == '__main__':
+    try:
+        if len(sys.argv) <> 2:
+            util.SMlog("Failed to parse commandline; wrong number of arguments; argv = %s" % (repr(sys.argv)))
+            raise xs_errors.XenError('BadRequest')
+
+        # Debug logging of the actual incoming command from the caller.
+        util.SMlog( "" )
+        util.SMlog( "SM.parse: DEBUG: args = %s,\n%s" % \
+                    ( sys.argv[0], \
+                      util.splitXmlText( util.hideMemberValuesInXmlParams( \
+                                         sys.argv[1] ), showContd=True ) ), \
+                                         priority=syslog.LOG_DEBUG )
+
+        try:
+            params, methodname = xmlrpclib.loads(sys.argv[1])
+            cmd = methodname
+            params = params[0] # expect a single struct
+            params = params
+
+            # params is a dictionary
+            dconf = params['device_config']
+            if params.has_key('sr_uuid'):
+                sr_uuid = params['sr_uuid']
+            if params.has_key('vdi_uuid'):
+                vdi_uuid = params['vdi_uuid']
+
+            import XenAPI
+
+            session = XenAPI.xapi_local()
+            session.xenapi.login_with_password('root', '')
+
+            def db_introduce(v, uuid):
+                sm_config = { }
+                ty = "user"
+                is_a_snapshot = False
+                metadata_of_pool = "OpaqueRef:NULL"
+                snapshot_time = "19700101T00:00:00Z"
+                snapshot_of = "OpaqueRef:NULL"
+                sharable = True
+                sr_ref = session.xenapi.SR.get_by_uuid(sr_uuid)
+                read_only = False
+                managed = True
+                session.xenapi.VDI.db_introduce(uuid, v.name, v.description, sr_ref, ty, shareable, read_only, {}, v.key, {}, sm_config, managed, str(v.size), str(v.size), metadata_of_pool, is_a_snapshot, xmlrpclib.DateTime(snapshot_time), snapshot_of)
+
+            def gen_uuid():
+                return subprocess.Popen(["uuidgen", "-r"], stdout=subprocess.PIPE).communicate()[0].strip()
+                
+            if cmd == 'vdi_create':
+                size = long(params['args'][0])
+                label = params['args'][1]
+                description = params['args'][2]
+                read_only = params['args'][7] == "true"
+                v = Volume().create(dbg, sr_uuid, label, description, size)
+                uuid = gen_uuid()
+                db_introduce(v, uuid)
+                struct = {
+                    'location': v.uri,
+                    'uuid': uuid
+                }
+                print xmlrpclib.dumps((struct,), "", True)
+
+
+
+        except Exception, e:
+            util.SMlog("Failed to parse commandline; exception = %s argv = %s" % (str(e), repr(sys.argv)))
+            raise xs_errors.XenError('BadRequest')
+    except:
+        traceback.print_tb()
