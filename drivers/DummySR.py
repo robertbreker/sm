@@ -296,6 +296,8 @@ class SR:
         return
     def attach(self, dbg, uri):
         return "some sr"
+    def detach(self, dbg, sr):
+        return
     def ls(self, dbg, sr):
         return [ {
             "key": "unknown-volume",
@@ -401,6 +403,9 @@ if __name__ == '__main__':
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
             elif cmd == 'sr_attach':
                 SR().attach(dbg, sr_uuid)
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
+            elif cmd == 'sr_detach':
+                SR().detach(dbg, sr_uuid)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
             elif cmd == 'vdi_create':
                 size = long(params['args'][0])
