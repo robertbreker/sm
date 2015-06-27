@@ -340,6 +340,13 @@ class Volume:
             "uri": ["file:\/\/\/secondary\/sr\/unknown-volume"]
             }
 
+class Datapath:
+    def attach(self, dbg, uri, domain):
+        return {
+            'domain_uuid': '0',
+            'implementation': [ 'Blkback', "/dev/zero" ],
+        }
+
 if __name__ == '__main__':
     try:
         if len(sys.argv) <> 2:
@@ -440,6 +447,12 @@ if __name__ == '__main__':
                     'location': v.uri,
                     'uuid': uuid
                 }
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
+            elif cmd == 'vdi_attach':
+                writable = params['args'][0] == 'true'
+                attach = Datapath().attach(dbg, sr_uuid, vdi_location, 0)
+                path = attach['implementation'][0][1]
+                struct = { 'params': path, 'xenstore_data': {}}
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
 
         except Exception, e:
