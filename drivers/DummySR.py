@@ -353,12 +353,11 @@ if __name__ == '__main__':
                 sr_uuid = params['sr_uuid']
             if params.has_key('vdi_uuid'):
                 vdi_uuid = params['vdi_uuid']
+            if params.has_key('vdi_location'):
+                vdi_location = params['vdi_location']
 
             dbg = "Dummy"
-            import XenAPI
-
-            session = XenAPI.xapi_local()
-            session.xenapi.login_with_password('root', '')
+            session = params['session_ref']
 
             def db_introduce(v, uuid):
                 sm_config = { }
