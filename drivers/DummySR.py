@@ -430,10 +430,10 @@ if __name__ == '__main__':
                 }
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
             elif cmd == 'vdi_delete':
-                Volume().destroy(dbg, sr_uuid, vdi_uuid)
+                Volume().destroy(dbg, sr_uuid, vdi_location)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
             elif cmd == 'vdi_clone':
-                v = Volume().clone(dbg, sr_uuid, vdi_uuid)
+                v = Volume().clone(dbg, sr_uuid, vdi_location)
                 uuid = gen_uuid()
                 db_introduce(v, uuid)
                 struct = {
@@ -442,7 +442,7 @@ if __name__ == '__main__':
                 }
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
             elif cmd == 'vdi_snapshot':
-                v = Volume().snapshot(dbg, sr_uuid, vdi_uuid)
+                v = Volume().snapshot(dbg, sr_uuid, vdi_location)
                 uuid = gen_uuid()
                 db_introduce(v, uuid)
                 struct = {
