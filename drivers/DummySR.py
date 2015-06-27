@@ -24,12 +24,14 @@ import xml.dom.minidom
 import xmlrpclib
 import xs_errors
 
+import traceback
+
 CAPABILITIES = ["SR_PROBE","VDI_CREATE","VDI_DELETE","VDI_ATTACH","VDI_DETACH",
                 "VDI_ACTIVATE","VDI_DEACTIVATE","VDI_CLONE","VDI_SNAPSHOT","VDI_RESIZE",
                 "VDI_INTRODUCE"]
 
 CONFIGURATION = [ ]
-                
+
 DRIVER_INFO = {
     'name': 'dummy',
     'description': 'SR plugin which manages fake data',
@@ -306,6 +308,24 @@ class Volume:
             }
     def destroy(self, dbg, sr, key):
         return
+    def clone(self, dbg, sr, key):
+        return {
+            "key": "unknown-volume",
+            "name": "unknown-volume",
+            "description": "",
+            "read_write": True,
+            "virtual_size": 1,
+            "uri": ["file:\/\/\/secondary\/sr\/unknown-volume"]
+            }
+    def snapshot(self, dbg, sr, key):
+        return {
+            "key": "unknown-volume",
+            "name": "unknown-volume",
+            "description": "",
+            "read_write": True,
+            "virtual_size": 1,
+            "uri": ["file:\/\/\/secondary\/sr\/unknown-volume"]
+            }
 
 if __name__ == '__main__':
     try:
@@ -378,8 +398,24 @@ if __name__ == '__main__':
             elif cmd == 'vdi_delete':
                 Volume().destroy(dbg, sr_uuid, vdi_uuid)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
-
-
+            elif cmd == 'vdi_clone':
+                v = Volume().clone(dbg, sr_uuid, vdi_uuid)
+                uuid = gen_uuid()
+                db_introduce(v, uuid)
+                struct = {
+                    'location': v.uri,
+                    'uuid': uuid
+                }
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
+            elif cmd == 'vdi_snapshot':
+                v = Volume().snapshot(dbg, sr_uuid, vdi_uuid)
+                uuid = gen_uuid()
+                db_introduce(v, uuid)
+                struct = {
+                    'location': v.uri,
+                    'uuid': uuid
+                }
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
 
         except Exception, e:
             util.SMlog("Failed to parse commandline; exception = %s argv = %s" % (str(e), repr(sys.argv)))
