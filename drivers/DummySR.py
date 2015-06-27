@@ -287,6 +287,10 @@ if __name__ == '__main__':
 else:
     SR.registerSR(DummySR)
 
+class SR:
+    def create(self, dbg, uri, configuration):
+        return
+
 class Volume:
     def create(self, dbg, sr, name, description, size):
         u = urlparse.urlparse(sr)
@@ -326,6 +330,7 @@ if __name__ == '__main__':
             if params.has_key('vdi_uuid'):
                 vdi_uuid = params['vdi_uuid']
 
+            dbg = "Dummy"
             import XenAPI
 
             session = XenAPI.xapi_local()
@@ -346,8 +351,12 @@ if __name__ == '__main__':
 
             def gen_uuid():
                 return subprocess.Popen(["uuidgen", "-r"], stdout=subprocess.PIPE).communicate()[0].strip()
-                
-            if cmd == 'vdi_create':
+
+            if cmd == 'sr_create':
+                uri = dconf["uri"]
+                sr = SR().create(dbg, uri, dconf)
+                util.SMlog("SM.Print = ")
+            elif cmd == 'vdi_create':
                 size = long(params['args'][0])
                 label = params['args'][1]
                 description = params['args'][2]
@@ -359,7 +368,7 @@ if __name__ == '__main__':
                     'location': v.uri,
                     'uuid': uuid
                 }
-                print xmlrpclib.dumps((struct,), "", True)
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
 
 
 
