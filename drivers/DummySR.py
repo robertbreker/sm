@@ -411,8 +411,23 @@ if __name__ == '__main__':
                 db_forget(vdi_uuid)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
             elif cmd == 'sr_scan':
-                vs = SR().ls(dbg, sr_uuid)
-                # resynchronise database records
+                sr_ref = session.xenapi.SR.get_by_uuid(sr_uuid)
+                vdis = session.xenapi.VDI.get_all_records_where("field \"SR\" = \"%s\"" % sr_ref)
+                xenapi_location_map = {}
+                for vdi in vdis.keys():
+                    xenapi_location_map[vdis[vdi]['location']] = vdi
+                volumes = SR().ls(dbg, sr_uuid)
+                volume_location_map = {}
+                for volume in volumes:
+                    volume_location_map[volume['uri'][0]] = volume
+                xenapi_locations = set(xenapi_location_map.keys())
+                volume_locations = set(volume_location_map.keys())
+                for new in volume_locations.difference(xenapi_locations):
+                    db_introduce(volume_location_map[new], gen_uuid())
+                for gone in xenapi_locations.difference(volume_locations):
+                    db_forget(xenapi_location_map[gone]['uuid'])
+                for existing in volume_locations.intersection(xenapi_locations):
+                    pass
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
             elif cmd == 'sr_attach':
                 SR().attach(dbg, sr_uuid)
