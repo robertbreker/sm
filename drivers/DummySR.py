@@ -346,6 +346,8 @@ class Datapath:
             'domain_uuid': '0',
             'implementation': [ 'Blkback', "/dev/zero" ],
         }
+    def detach(self, dbg, uri, domain):
+        return
 
 if __name__ == '__main__':
     try:
@@ -454,6 +456,10 @@ if __name__ == '__main__':
                 path = attach['implementation'][0][1]
                 struct = { 'params': path, 'xenstore_data': {}}
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
+            elif cmd == 'vdi_detach':
+                Datapath().detach(dbg, sr_uuid, vdi_location)
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
+
 
         except Exception, e:
             util.SMlog("Failed to parse commandline; exception = %s argv = %s" % (str(e), repr(sys.argv)))
