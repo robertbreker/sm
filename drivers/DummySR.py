@@ -290,6 +290,8 @@ else:
 class SR:
     def create(self, dbg, uri, configuration):
         return
+    def destroy(self, dbg, uri):
+        return
 
 class Volume:
     def create(self, dbg, sr, name, description, size):
@@ -353,8 +355,10 @@ if __name__ == '__main__':
                 return subprocess.Popen(["uuidgen", "-r"], stdout=subprocess.PIPE).communicate()[0].strip()
 
             if cmd == 'sr_create':
-                uri = dconf["uri"]
-                sr = SR().create(dbg, uri, dconf)
+                sr = SR().create(dbg, sr_uuid, dconf)
+                util.SMlog("SM.Print = ")
+            elif cmd == 'sr_delete':
+                sr = SR().destroy(dbg, sr_uuid)
                 util.SMlog("SM.Print = ")
             elif cmd == 'vdi_create':
                 size = long(params['args'][0])
