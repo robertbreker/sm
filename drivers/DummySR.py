@@ -372,7 +372,9 @@ if __name__ == '__main__':
                 read_only = False
                 managed = True
                 session.xenapi.VDI.db_introduce(uuid, v.name, v.description, sr_ref, ty, shareable, read_only, {}, v.key, {}, sm_config, managed, str(v.size), str(v.size), metadata_of_pool, is_a_snapshot, xmlrpclib.DateTime(snapshot_time), snapshot_of)
-
+            def db_forget(uuid):
+                vdi = session.xenapi.VDI.get_by_uuid(uuid)
+                session.xenapi.VDI.db_forget(vdi)
             def gen_uuid():
                 return subprocess.Popen(["uuidgen", "-r"], stdout=subprocess.PIPE).communicate()[0].strip()
 
@@ -381,6 +383,7 @@ if __name__ == '__main__':
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
             elif cmd == 'sr_delete':
                 sr = SR().destroy(dbg, sr_uuid)
+                db_forget(vdi_uuid)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
             elif cmd == 'vdi_create':
                 size = long(params['args'][0])
