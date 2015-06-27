@@ -294,6 +294,15 @@ class SR:
         return
     def destroy(self, dbg, uri):
         return
+    def ls(self, dbg, sr):
+        return [ {
+            "key": "unknown-volume",
+            "name": "unknown-volume",
+            "description": "",
+            "read_write": True,
+            "virtual_size": 1,
+            "uri": ["file:\/\/\/secondary\/sr\/unknown-volume"]
+        } ]
 
 class Volume:
     def create(self, dbg, sr, name, description, size):
@@ -384,6 +393,10 @@ if __name__ == '__main__':
                 sr = SR().destroy(dbg, sr_uuid)
                 db_forget(vdi_uuid)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
+            elif cmd == 'sr_scan':
+                vs = SR().ls(dbg, sr_uuid)
+                # resynchronise database records
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
             elif cmd == 'vdi_create':
                 size = long(params['args'][0])
                 label = params['args'][1]
