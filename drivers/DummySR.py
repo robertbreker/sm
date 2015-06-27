@@ -346,6 +346,8 @@ class Datapath:
             'domain_uuid': '0',
             'implementation': [ 'Blkback', "/dev/zero" ],
         }
+    def activate(self, dbg, uri, domain):
+        return
     def detach(self, dbg, uri, domain):
         return
 
@@ -459,7 +461,10 @@ if __name__ == '__main__':
             elif cmd == 'vdi_detach':
                 Datapath().detach(dbg, sr_uuid, vdi_location)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
-
+            elif cmd == 'vdi_activate':
+                writable = params['args'][0] == 'true'
+                Datapath().activate(dbg, sr_uuid, vdi_location, 0)
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
 
         except Exception, e:
             util.SMlog("Failed to parse commandline; exception = %s argv = %s" % (str(e), repr(sys.argv)))
