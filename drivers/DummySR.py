@@ -294,6 +294,8 @@ class SR:
         return
     def destroy(self, dbg, uri):
         return
+    def attach(self, dbg, uri):
+        return "some sr"
     def ls(self, dbg, sr):
         return [ {
             "key": "unknown-volume",
@@ -396,6 +398,9 @@ if __name__ == '__main__':
             elif cmd == 'sr_scan':
                 vs = SR().ls(dbg, sr_uuid)
                 # resynchronise database records
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
+            elif cmd == 'sr_attach':
+                SR().attach(dbg, sr_uuid)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
             elif cmd == 'vdi_create':
                 size = long(params['args'][0])
