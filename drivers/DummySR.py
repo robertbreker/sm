@@ -485,6 +485,16 @@ if __name__ == '__main__':
             elif cmd == 'vdi_deactivate':
                 Datapath().deactivate(dbg, sr_uuid, vdi_location, 0)
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
+            elif cmd == 'sr_get_driver_info':
+                results = {}
+                for key in [ 'name', 'description', 'vendor', 'copyright', \
+                             'driver_version', 'required_api_version', 'capabilities' ]:
+                    results[key] = driver_info[key]
+                options = []
+                for option in driver_info['configuration']:
+                    options.append({ 'key': option[0], 'description': option[1] })
+                results['configuration'] = options
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((results,), "", True))
             else:
                 util.SMlog("Unimplemented command: ", cmd)
 
