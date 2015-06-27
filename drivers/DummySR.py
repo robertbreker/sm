@@ -304,6 +304,8 @@ class Volume:
             "virtual_size": 1,
             "uri": ["file:\/\/\/secondary\/sr\/unknown-volume"]
             }
+    def destroy(self, dbg, sr, key):
+        return
 
 if __name__ == '__main__':
     try:
@@ -356,10 +358,10 @@ if __name__ == '__main__':
 
             if cmd == 'sr_create':
                 sr = SR().create(dbg, sr_uuid, dconf)
-                util.SMlog("SM.Print = ")
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
             elif cmd == 'sr_delete':
                 sr = SR().destroy(dbg, sr_uuid)
-                util.SMlog("SM.Print = ")
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
             elif cmd == 'vdi_create':
                 size = long(params['args'][0])
                 label = params['args'][1]
@@ -373,6 +375,9 @@ if __name__ == '__main__':
                     'uuid': uuid
                 }
                 util.SMlog("SM.Print = ", xmlrpclib.dumps((struct,), "", True))
+            elif cmd == 'vdi_delete':
+                Volume().destroy(dbg, sr_uuid, vdi_uuid)
+                util.SMlog("SM.Print = ", xmlrpclib.dumps((None,), "", True, allow_none=True))
 
 
 
