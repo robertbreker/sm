@@ -78,7 +78,7 @@ class Datapath:
     def attach(self, dbg, uri, domain):
         return {
             'domain_uuid': '0',
-            'implementation': [ 'Blkback', "/dev/zero" ],
+            'implementation': [ 'Blkback', "/dev/loop0" ],
         }
     def activate(self, dbg, uri, domain):
         return
