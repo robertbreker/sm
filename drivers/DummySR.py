@@ -20,23 +20,6 @@
 import os, sys, time, syslog, errno, traceback, subprocess
 import xmlrpclib, XenAPI
 
-CAPABILITIES = ["SR_PROBE","VDI_CREATE","VDI_DELETE","VDI_ATTACH","VDI_DETACH",
-                "VDI_ACTIVATE","VDI_DEACTIVATE","VDI_CLONE","VDI_SNAPSHOT","VDI_RESIZE",
-                "VDI_INTRODUCE"]
-
-CONFIGURATION = [ ]
-
-DRIVER_INFO = {
-    'name': 'dummy',
-    'description': 'SR plugin which manages fake data',
-    'vendor': 'Citrix Systems Inc',
-    'copyright': '(C) 2008 Citrix Systems Inc',
-    'driver_version': '1.0',
-    'required_api_version': '1.1',
-    'capabilities': CAPABILITIES,
-    'configuration': CONFIGURATION
-    }
-
 def log(message):
     syslog.syslog(syslog.LOG_INFO, message)
 
@@ -103,6 +86,24 @@ class Datapath:
         return
     def detach(self, dbg, uri, domain):
         return
+
+# Everything beneath here is SMAPIv1 boilerplate:
+CAPABILITIES = ["SR_PROBE","VDI_CREATE","VDI_DELETE","VDI_ATTACH","VDI_DETACH",
+                "VDI_ACTIVATE","VDI_DEACTIVATE","VDI_CLONE","VDI_SNAPSHOT","VDI_RESIZE",
+                "VDI_INTRODUCE"]
+
+CONFIGURATION = [ ]
+
+DRIVER_INFO = {
+    'name': 'dummy',
+    'description': 'SR plugin which manages fake data',
+    'vendor': 'Citrix Systems Inc',
+    'copyright': '(C) 2015 Citrix Systems Inc',
+    'driver_version': '1.0',
+    'required_api_version': '1.1',
+    'capabilities': CAPABILITIES,
+    'configuration': CONFIGURATION
+    }
 
 if __name__ == '__main__':
     try:
