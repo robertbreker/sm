@@ -215,11 +215,11 @@ if __name__ == '__main__':
         elif cmd == 'vdi_attach':
             writable = params['args'][0] == 'true'
             attach = Datapath().attach(dbg, vdi_location, 0)
-            path = attach['implementation'][0][1]
+            path = attach['implementation'][1]
             struct = { 'params': path, 'xenstore_data': {}}
             print xmlrpclib.dumps((struct,), "", True)
         elif cmd == 'vdi_detach':
-            Datapath().detach(dbg, vdi_location)
+            Datapath().detach(dbg, vdi_location, 0)
             print nil
         elif cmd == 'vdi_activate':
             writable = params['args'][0] == 'true'
