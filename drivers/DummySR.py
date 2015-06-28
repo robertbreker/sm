@@ -17,13 +17,8 @@
 #
 # DummySR: an example dummy SR for the SDK
 
-import errno
-import os, sys, time, syslog
-import xmlrpclib
-
-import util, xs_errors
-
-import traceback
+import os, sys, time, syslog, errno, traceback, subprocess
+import xmlrpclib, XenAPI
 
 CAPABILITIES = ["SR_PROBE","VDI_CREATE","VDI_DELETE","VDI_ATTACH","VDI_DETACH",
                 "VDI_ACTIVATE","VDI_DEACTIVATE","VDI_CLONE","VDI_SNAPSHOT","VDI_RESIZE",
@@ -41,6 +36,9 @@ DRIVER_INFO = {
     'capabilities': CAPABILITIES,
     'configuration': CONFIGURATION
     }
+
+def log(message):
+    syslog.syslog(syslog.LOG_INFO, message)
 
 class SR:
     def create(self, dbg, uri, configuration):
@@ -108,18 +106,6 @@ class Datapath:
 
 if __name__ == '__main__':
     try:
-        if len(sys.argv) <> 2:
-            util.SMlog("Failed to parse commandline; wrong number of arguments; argv = %s" % (repr(sys.argv)))
-            raise xs_errors.XenError('BadRequest')
-
-        # Debug logging of the actual incoming command from the caller.
-        util.SMlog( "" )
-        util.SMlog( "SM.parse: DEBUG: args = %s,\n%s" % \
-                    ( sys.argv[0], \
-                      util.splitXmlText( util.hideMemberValuesInXmlParams( \
-                                         sys.argv[1] ), showContd=True ) ), \
-                                         priority=syslog.LOG_DEBUG )
-
         try:
             params, methodname = xmlrpclib.loads(sys.argv[1])
             cmd = methodname
@@ -136,7 +122,8 @@ if __name__ == '__main__':
                 vdi_location = params['vdi_location']
 
             dbg = "Dummy"
-            session = params['session_ref']
+            session = XenAPI.xapi_local()
+            session._session = params['session_ref']
 
             def db_introduce(v, uuid):
                 sm_config = { }
@@ -145,11 +132,11 @@ if __name__ == '__main__':
                 metadata_of_pool = "OpaqueRef:NULL"
                 snapshot_time = "19700101T00:00:00Z"
                 snapshot_of = "OpaqueRef:NULL"
-                sharable = True
+                shareable = True
                 sr_ref = session.xenapi.SR.get_by_uuid(sr_uuid)
                 read_only = False
                 managed = True
-                session.xenapi.VDI.db_introduce(uuid, v.name, v.description, sr_ref, ty, shareable, read_only, {}, v.key, {}, sm_config, managed, str(v.size), str(v.size), metadata_of_pool, is_a_snapshot, xmlrpclib.DateTime(snapshot_time), snapshot_of)
+                session.xenapi.VDI.db_introduce(uuid, v['name'], v['description'], sr_ref, ty, shareable, read_only, {}, v['uri'][0], {}, sm_config, managed, str(v['virtual_size']), str(v['virtual_size']), metadata_of_pool, is_a_snapshot, xmlrpclib.DateTime(snapshot_time), snapshot_of)
             def db_forget(uuid):
                 vdi = session.xenapi.VDI.get_by_uuid(uuid)
                 session.xenapi.VDI.db_forget(vdi)
@@ -175,6 +162,9 @@ if __name__ == '__main__':
                     volume_location_map[volume['uri'][0]] = volume
                 xenapi_locations = set(xenapi_location_map.keys())
                 volume_locations = set(volume_location_map.keys())
+                log("xenapi_locations = %s" % str(xenapi_locations))
+                log("volume_locations = %s" % str(volume_locations))
+
                 for new in volume_locations.difference(xenapi_locations):
                     db_introduce(volume_location_map[new], gen_uuid())
                 for gone in xenapi_locations.difference(volume_locations):
@@ -251,8 +241,9 @@ if __name__ == '__main__':
             else:
                 print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), "Unimplemented command: %s" % cmd, "", True))
         except Exception, e:
-            util.SMlog("Failed to parse commandline; exception = %s argv = %s" % (str(e), repr(sys.argv)))
-            print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), str(e)), "", True)
+            info = sys.exc_info()
+            tb = "\n".join(traceback.format_tb(info[2]))
+            print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), str(e) + "\n" + tb), "", True)
     except:
             info = sys.exc_info()
             if info[0] == exceptions.SystemExit:
