@@ -171,9 +171,6 @@ if __name__ == '__main__':
                 volume_location_map[volume['uri'][0]] = volume
             xenapi_locations = set(xenapi_location_map.keys())
             volume_locations = set(volume_location_map.keys())
-            log("xenapi_locations = %s" % str(xenapi_locations))
-            log("volume_locations = %s" % str(volume_locations))
-
             for new in volume_locations.difference(xenapi_locations):
                 db_introduce(volume_location_map[new], gen_uuid())
             for gone in xenapi_locations.difference(volume_locations):
