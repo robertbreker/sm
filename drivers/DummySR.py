@@ -155,7 +155,7 @@ if __name__ == '__main__':
             vdis = session.xenapi.VDI.get_all_records_where("field \"SR\" = \"%s\"" % sr_ref)
             xenapi_location_map = {}
             for vdi in vdis.keys():
-                xenapi_location_map[vdis[vdi]['location']] = vdi
+                xenapi_location_map[vdis[vdi]['location']] = vdis[vdi]
             volumes = SR().ls(dbg, sr_uuid)
             volume_location_map = {}
             for volume in volumes:
