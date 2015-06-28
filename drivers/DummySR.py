@@ -106,149 +106,140 @@ class Datapath:
 
 if __name__ == '__main__':
     try:
-        try:
-            params, methodname = xmlrpclib.loads(sys.argv[1])
-            cmd = methodname
-            params = params[0] # expect a single struct
-            params = params
+        params, methodname = xmlrpclib.loads(sys.argv[1])
+        cmd = methodname
+        params = params[0] # expect a single struct
+        params = params
 
-            # params is a dictionary
-            dconf = params['device_config']
-            if params.has_key('sr_uuid'):
-                sr_uuid = params['sr_uuid']
-            if params.has_key('vdi_uuid'):
-                vdi_uuid = params['vdi_uuid']
-            if params.has_key('vdi_location'):
-                vdi_location = params['vdi_location']
+        # params is a dictionary
+        dconf = params['device_config']
+        if params.has_key('sr_uuid'):
+            sr_uuid = params['sr_uuid']
+        if params.has_key('vdi_uuid'):
+            vdi_uuid = params['vdi_uuid']
+        if params.has_key('vdi_location'):
+            vdi_location = params['vdi_location']
 
-            dbg = "Dummy"
-            session = XenAPI.xapi_local()
-            session._session = params['session_ref']
+        dbg = "Dummy"
+        session = XenAPI.xapi_local()
+        session._session = params['session_ref']
 
-            def db_introduce(v, uuid):
-                sm_config = { }
-                ty = "user"
-                is_a_snapshot = False
-                metadata_of_pool = "OpaqueRef:NULL"
-                snapshot_time = "19700101T00:00:00Z"
-                snapshot_of = "OpaqueRef:NULL"
-                shareable = True
-                sr_ref = session.xenapi.SR.get_by_uuid(sr_uuid)
-                read_only = False
-                managed = True
-                session.xenapi.VDI.db_introduce(uuid, v['name'], v['description'], sr_ref, ty, shareable, read_only, {}, v['uri'][0], {}, sm_config, managed, str(v['virtual_size']), str(v['virtual_size']), metadata_of_pool, is_a_snapshot, xmlrpclib.DateTime(snapshot_time), snapshot_of)
-            def db_forget(uuid):
-                vdi = session.xenapi.VDI.get_by_uuid(uuid)
-                session.xenapi.VDI.db_forget(vdi)
-            def gen_uuid():
-                return subprocess.Popen(["uuidgen", "-r"], stdout=subprocess.PIPE).communicate()[0].strip()
-            nil = xmlrpclib.dumps((None,), "", True, allow_none=True)
-            if cmd == 'sr_create':
-                sr = SR().create(dbg, sr_uuid, dconf)
-                print nil
-            elif cmd == 'sr_delete':
-                sr = SR().destroy(dbg, sr_uuid)
-                db_forget(vdi_uuid)
-                print nil
-            elif cmd == 'sr_scan':
-                sr_ref = session.xenapi.SR.get_by_uuid(sr_uuid)
-                vdis = session.xenapi.VDI.get_all_records_where("field \"SR\" = \"%s\"" % sr_ref)
-                xenapi_location_map = {}
-                for vdi in vdis.keys():
-                    xenapi_location_map[vdis[vdi]['location']] = vdi
-                volumes = SR().ls(dbg, sr_uuid)
-                volume_location_map = {}
-                for volume in volumes:
-                    volume_location_map[volume['uri'][0]] = volume
-                xenapi_locations = set(xenapi_location_map.keys())
-                volume_locations = set(volume_location_map.keys())
-                log("xenapi_locations = %s" % str(xenapi_locations))
-                log("volume_locations = %s" % str(volume_locations))
+        def db_introduce(v, uuid):
+            sm_config = { }
+            ty = "user"
+            is_a_snapshot = False
+            metadata_of_pool = "OpaqueRef:NULL"
+            snapshot_time = "19700101T00:00:00Z"
+            snapshot_of = "OpaqueRef:NULL"
+            shareable = True
+            sr_ref = session.xenapi.SR.get_by_uuid(sr_uuid)
+            read_only = False
+            managed = True
+            session.xenapi.VDI.db_introduce(uuid, v['name'], v['description'], sr_ref, ty, shareable, read_only, {}, v['uri'][0], {}, sm_config, managed, str(v['virtual_size']), str(v['virtual_size']), metadata_of_pool, is_a_snapshot, xmlrpclib.DateTime(snapshot_time), snapshot_of)
+        def db_forget(uuid):
+            vdi = session.xenapi.VDI.get_by_uuid(uuid)
+            session.xenapi.VDI.db_forget(vdi)
+        def gen_uuid():
+            return subprocess.Popen(["uuidgen", "-r"], stdout=subprocess.PIPE).communicate()[0].strip()
+        nil = xmlrpclib.dumps((None,), "", True, allow_none=True)
+        if cmd == 'sr_create':
+            sr = SR().create(dbg, sr_uuid, dconf)
+            print nil
+        elif cmd == 'sr_delete':
+            sr = SR().destroy(dbg, sr_uuid)
+            db_forget(vdi_uuid)
+            print nil
+        elif cmd == 'sr_scan':
+            sr_ref = session.xenapi.SR.get_by_uuid(sr_uuid)
+            vdis = session.xenapi.VDI.get_all_records_where("field \"SR\" = \"%s\"" % sr_ref)
+            xenapi_location_map = {}
+            for vdi in vdis.keys():
+                xenapi_location_map[vdis[vdi]['location']] = vdi
+            volumes = SR().ls(dbg, sr_uuid)
+            volume_location_map = {}
+            for volume in volumes:
+                volume_location_map[volume['uri'][0]] = volume
+            xenapi_locations = set(xenapi_location_map.keys())
+            volume_locations = set(volume_location_map.keys())
+            log("xenapi_locations = %s" % str(xenapi_locations))
+            log("volume_locations = %s" % str(volume_locations))
 
-                for new in volume_locations.difference(xenapi_locations):
-                    db_introduce(volume_location_map[new], gen_uuid())
-                for gone in xenapi_locations.difference(volume_locations):
-                    db_forget(xenapi_location_map[gone]['uuid'])
-                for existing in volume_locations.intersection(xenapi_locations):
-                    pass
-                print nil
-            elif cmd == 'sr_attach':
-                SR().attach(dbg, sr_uuid)
-                print nil
-            elif cmd == 'sr_detach':
-                SR().detach(dbg, sr_uuid)
-                print nil
-            elif cmd == 'vdi_create':
-                size = long(params['args'][0])
-                label = params['args'][1]
-                description = params['args'][2]
-                read_only = params['args'][7] == "true"
-                v = Volume().create(dbg, sr_uuid, label, description, size)
-                uuid = gen_uuid()
-                db_introduce(v, uuid)
-                struct = {
-                    'location': v.uri,
-                    'uuid': uuid
-                }
-                print xmlrpclib.dumps((struct,), "", True)
-            elif cmd == 'vdi_delete':
-                Volume().destroy(dbg, sr_uuid, vdi_location)
-                print nil
-            elif cmd == 'vdi_clone':
-                v = Volume().clone(dbg, sr_uuid, vdi_location)
-                uuid = gen_uuid()
-                db_introduce(v, uuid)
-                struct = {
-                    'location': v.uri,
-                    'uuid': uuid
-                }
-                print xmlrpclib.dumps((struct,), "", True)
-            elif cmd == 'vdi_snapshot':
-                v = Volume().snapshot(dbg, sr_uuid, vdi_location)
-                uuid = gen_uuid()
-                db_introduce(v, uuid)
-                struct = {
-                    'location': v.uri,
-                    'uuid': uuid
-                }
-                print xmlrpclib.dumps((struct,), "", True)
-            elif cmd == 'vdi_attach':
-                writable = params['args'][0] == 'true'
-                attach = Datapath().attach(dbg, sr_uuid, vdi_location, 0)
-                path = attach['implementation'][0][1]
-                struct = { 'params': path, 'xenstore_data': {}}
-                print xmlrpclib.dumps((struct,), "", True)
-            elif cmd == 'vdi_detach':
-                Datapath().detach(dbg, sr_uuid, vdi_location)
-                print nil
-            elif cmd == 'vdi_activate':
-                writable = params['args'][0] == 'true'
-                Datapath().activate(dbg, sr_uuid, vdi_location, 0)
-                print nil
-            elif cmd == 'vdi_deactivate':
-                Datapath().deactivate(dbg, sr_uuid, vdi_location, 0)
-                print nil
-            elif cmd == 'sr_get_driver_info':
-                results = {}
-                for key in [ 'name', 'description', 'vendor', 'copyright', \
-                             'driver_version', 'required_api_version', 'capabilities' ]:
-                    results[key] = driver_info[key]
-                options = []
-                for option in driver_info['configuration']:
-                    options.append({ 'key': option[0], 'description': option[1] })
-                results['configuration'] = options
-                print xmlrpclib.dumps((results,), "", True)
-            else:
-                print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), "Unimplemented command: %s" % cmd, "", True))
-        except Exception, e:
-            info = sys.exc_info()
-            tb = "\n".join(traceback.format_tb(info[2]))
-            print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), str(e) + "\n" + tb), "", True)
-    except:
-            info = sys.exc_info()
-            if info[0] == exceptions.SystemExit:
-                # this should not be happening when catching "Exception", but it is
-                sys.exit(0)
-            tb = reduce(lambda a, b: "%s%s" % (a, b), traceback.format_tb(info[2]))
-            str = "EXCEPTION %s, %s\n%s" % (info[0], info[1], tb)
-            print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), str, "", True))
+            for new in volume_locations.difference(xenapi_locations):
+                db_introduce(volume_location_map[new], gen_uuid())
+            for gone in xenapi_locations.difference(volume_locations):
+                db_forget(xenapi_location_map[gone]['uuid'])
+            for existing in volume_locations.intersection(xenapi_locations):
+                pass
+            print nil
+        elif cmd == 'sr_attach':
+            SR().attach(dbg, sr_uuid)
+            print nil
+        elif cmd == 'sr_detach':
+            SR().detach(dbg, sr_uuid)
+            print nil
+        elif cmd == 'vdi_create':
+            size = long(params['args'][0])
+            label = params['args'][1]
+            description = params['args'][2]
+            read_only = params['args'][7] == "true"
+            v = Volume().create(dbg, sr_uuid, label, description, size)
+            uuid = gen_uuid()
+            db_introduce(v, uuid)
+            struct = {
+                'location': v.uri,
+                'uuid': uuid
+            }
+            print xmlrpclib.dumps((struct,), "", True)
+        elif cmd == 'vdi_delete':
+            Volume().destroy(dbg, sr_uuid, vdi_location)
+            print nil
+        elif cmd == 'vdi_clone':
+            v = Volume().clone(dbg, sr_uuid, vdi_location)
+            uuid = gen_uuid()
+            db_introduce(v, uuid)
+            struct = {
+                'location': v.uri,
+                'uuid': uuid
+            }
+            print xmlrpclib.dumps((struct,), "", True)
+        elif cmd == 'vdi_snapshot':
+            v = Volume().snapshot(dbg, sr_uuid, vdi_location)
+            uuid = gen_uuid()
+            db_introduce(v, uuid)
+            struct = {
+                'location': v.uri,
+                'uuid': uuid
+            }
+            print xmlrpclib.dumps((struct,), "", True)
+        elif cmd == 'vdi_attach':
+            writable = params['args'][0] == 'true'
+            attach = Datapath().attach(dbg, sr_uuid, vdi_location, 0)
+            path = attach['implementation'][0][1]
+            struct = { 'params': path, 'xenstore_data': {}}
+            print xmlrpclib.dumps((struct,), "", True)
+        elif cmd == 'vdi_detach':
+            Datapath().detach(dbg, sr_uuid, vdi_location)
+            print nil
+        elif cmd == 'vdi_activate':
+            writable = params['args'][0] == 'true'
+            Datapath().activate(dbg, sr_uuid, vdi_location, 0)
+            print nil
+        elif cmd == 'vdi_deactivate':
+            Datapath().deactivate(dbg, sr_uuid, vdi_location, 0)
+            print nil
+        elif cmd == 'sr_get_driver_info':
+            results = {}
+            for key in [ 'name', 'description', 'vendor', 'copyright', \
+                         'driver_version', 'required_api_version', 'capabilities' ]:
+                results[key] = driver_info[key]
+            options = []
+            for option in driver_info['configuration']:
+                options.append({ 'key': option[0], 'description': option[1] })
+            results['configuration'] = options
+            print xmlrpclib.dumps((results,), "", True)
+        else:
+            print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), "Unimplemented command: %s" % cmd, "", True))
+    except Exception, e:
+        info = sys.exc_info()
+        tb = "\n".join(traceback.format_tb(info[2]))
+        print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), str(e) + "\n" + tb), "", True)
