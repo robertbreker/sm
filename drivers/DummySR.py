@@ -17,7 +17,7 @@
 #
 # DummySR: an example dummy SR for the SDK
 
-import os, sys, time, syslog, errno, traceback, subprocess
+import os, sys, time, syslog, errno, traceback, subprocess, exceptions
 import xmlrpclib, XenAPI
 
 def log(message):
@@ -92,7 +92,7 @@ CAPABILITIES = ["SR_PROBE","VDI_CREATE","VDI_DELETE","VDI_ATTACH","VDI_DETACH",
                 "VDI_ACTIVATE","VDI_DEACTIVATE","VDI_CLONE","VDI_SNAPSHOT","VDI_RESIZE",
                 "VDI_INTRODUCE"]
 
-CONFIGURATION = [ ]
+CONFIGURATION = [ ['uri', 'storage target (required) (e.g. iscsi://target)'] ]
 
 DRIVER_INFO = {
     'name': 'dummy',
@@ -107,12 +107,21 @@ DRIVER_INFO = {
 
 if __name__ == '__main__':
     try:
-        params, methodname = xmlrpclib.loads(sys.argv[1])
-        cmd = methodname
-        params = params[0] # expect a single struct
-        params = params
+        params, cmd = xmlrpclib.loads(sys.argv[1])
 
-        # params is a dictionary
+        if cmd == 'sr_get_driver_info':
+            results = {}
+            for key in [ 'name', 'description', 'vendor', 'copyright', \
+                         'driver_version', 'required_api_version', 'capabilities' ]:
+                results[key] = DRIVER_INFO[key]
+            options = []
+            for option in DRIVER_INFO['configuration']:
+                options.append({ 'key': option[0], 'description': option[1] })
+            results['configuration'] = options
+            print xmlrpclib.dumps((results,), "", True)
+            sys.exit(0)
+
+        params = params[0]
         dconf = params['device_config']
         if params.has_key('sr_uuid'):
             sr_uuid = params['sr_uuid']
@@ -228,19 +237,11 @@ if __name__ == '__main__':
         elif cmd == 'vdi_deactivate':
             Datapath().deactivate(dbg, vdi_location, 0)
             print nil
-        elif cmd == 'sr_get_driver_info':
-            results = {}
-            for key in [ 'name', 'description', 'vendor', 'copyright', \
-                         'driver_version', 'required_api_version', 'capabilities' ]:
-                results[key] = driver_info[key]
-            options = []
-            for option in driver_info['configuration']:
-                options.append({ 'key': option[0], 'description': option[1] })
-            results['configuration'] = options
-            print xmlrpclib.dumps((results,), "", True)
         else:
             print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), "Unimplemented command: %s" % cmd, "", True))
     except Exception, e:
         info = sys.exc_info()
+        if info[0] == exceptions.SystemExit:
+            sys.exit(0)
         tb = "\n".join(traceback.format_tb(info[2]))
         print xmlrpclib.dumps(xmlrpclib.Fault(int(errno.EINVAL), str(e) + "\n" + tb), "", True)
