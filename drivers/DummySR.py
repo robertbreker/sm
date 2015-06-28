@@ -214,19 +214,19 @@ if __name__ == '__main__':
             print xmlrpclib.dumps((struct,), "", True)
         elif cmd == 'vdi_attach':
             writable = params['args'][0] == 'true'
-            attach = Datapath().attach(dbg, sr_uuid, vdi_location, 0)
+            attach = Datapath().attach(dbg, vdi_location, 0)
             path = attach['implementation'][0][1]
             struct = { 'params': path, 'xenstore_data': {}}
             print xmlrpclib.dumps((struct,), "", True)
         elif cmd == 'vdi_detach':
-            Datapath().detach(dbg, sr_uuid, vdi_location)
+            Datapath().detach(dbg, vdi_location)
             print nil
         elif cmd == 'vdi_activate':
             writable = params['args'][0] == 'true'
-            Datapath().activate(dbg, sr_uuid, vdi_location, 0)
+            Datapath().activate(dbg, vdi_location, 0)
             print nil
         elif cmd == 'vdi_deactivate':
-            Datapath().deactivate(dbg, sr_uuid, vdi_location, 0)
+            Datapath().deactivate(dbg, vdi_location, 0)
             print nil
         elif cmd == 'sr_get_driver_info':
             results = {}
