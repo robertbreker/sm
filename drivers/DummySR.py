@@ -41,6 +41,12 @@ class SR:
             "virtual_size": 1,
             "uri": ["file:\/\/\/secondary\/sr\/unknown-volume"]
         } ]
+    def stat(self, dbg, sr):
+        return {
+            "virtual_allocation": 0,         # sum of the "virtual_sizes" of Volumes
+            "physical_utilisation": 0,       # total space occupied in SR
+            "physical_size": 1000000000000L  # total space in the SR
+        }
 
 class Volume:
     def create(self, dbg, sr, name, description, size):
@@ -149,6 +155,11 @@ if __name__ == '__main__':
         def db_forget(uuid):
             vdi = session.xenapi.VDI.get_by_uuid(uuid)
             session.xenapi.VDI.db_forget(vdi)
+        def sr_update(sr_ref):
+            stats = SR().stat(dbg, sr_uuid)
+            self.session.xenapi.SR.set_virtual_allocation(sr_ref, str(stats["virtual_allocation"]))
+            self.session.xenapi.SR.set_physical_size(sr_ref, str(stats["physical_size"]))
+            self.session.xenapi.SR.set_physical_utilisation(sr_ref, str(stats["physical_utilisation"]))
         def gen_uuid():
             return subprocess.Popen(["uuidgen", "-r"], stdout=subprocess.PIPE).communicate()[0].strip()
         nil = xmlrpclib.dumps((None,), "", True, allow_none=True)
@@ -177,6 +188,7 @@ if __name__ == '__main__':
                 db_forget(xenapi_location_map[gone]['uuid'])
             for existing in volume_locations.intersection(xenapi_locations):
                 pass
+            sr_update(sr_ref)
             print nil
         elif cmd == 'sr_attach':
             SR().attach(dbg, sr_uuid)
